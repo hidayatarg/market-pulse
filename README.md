@@ -1,11 +1,11 @@
 # MarketPulse — AI Stock & Crypto Market Analyst
 
-Full-stack starter: **FastAPI + React/Vite + Recharts + OpenAI Agents SDK (optional)**.
+Full-stack starter: **Node.js/TypeScript + Express + React/Vite + Recharts + OpenAI Agents SDK (optional)**.
 
 ## Features
 - Welcome screen, prompt suggestions, ticker quick-access and chat interface
 - Stock and cryptocurrency support: e.g. `NVDA`, `AAPL`, `AVGO`, `BTC`, `ETH`, `SOL`
-- Real historical daily closing prices from Yahoo Finance via `yfinance`
+- Real historical daily closing prices from Yahoo Finance via `yahoo-finance2`
 - Deterministic SMA50, SMA200, RSI14 and daily change calculations
 - Interactive chart showing close/SMA50/SMA200 for ~260 sessions
 - Market regime from SPY+QQQ (stocks) or BTC+ETH (crypto)
@@ -13,27 +13,22 @@ Full-stack starter: **FastAPI + React/Vite + Recharts + OpenAI Agents SDK (optio
 - Separate `/api/chat`, `/api/analyze`, and `/api/health` endpoints
 
 ## Requirements
-- Python 3.11–3.13 (uv defaults to Python 3.12 for this project)
-- Node.js 20+
+- Node.js 22+ and npm
 - Internet connection for market data and optional OpenAI calls
-
-## Run backend with uv
-
-Install uv first if needed: `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv` on macOS).
-
-Run `uv lock` to create a reproducible `uv.lock`, and commit that file to source control.
 
 ## Run backend
 
 ```bash
 cd backend
-uv sync
+npm ci
 cp .env.example .env
 # Set OPENAI_API_KEY in .env for AI-written explanations (optional)
-uv run uvicorn main:app --reload --host 127.0.0.1 --port 8000
+npm run dev
 ```
 
-API documentation: http://localhost:8000/docs
+The API listens on http://127.0.0.1:8000 by default. Set `HOST` and `PORT` to override.
+For production, run `npm run build` then `npm start`. Run `npm test` for regression checks.
+See [backend/README.md](backend/README.md) for endpoint and validation details.
 
 ## Run frontend
 
@@ -60,7 +55,7 @@ curl -X POST http://localhost:8000/api/analyze \
 
 ## Architecture
 
-`React chat → POST /api/chat → ticker extraction → yfinance history → pandas indicators → benchmark regime → optional OpenAI agent → structured JSON → Recharts dashboard`
+`React chat → POST /api/chat → ticker extraction → yahoo-finance2 history → TypeScript indicators → benchmark regime → optional OpenAI agent → structured JSON → Recharts dashboard`
 
 ### Limitations and production improvements
 - Yahoo Finance is an unofficial, potentially rate-limited/delayed source. The price is the **latest daily bar close**, not a guaranteed instant executable quote. For production use licensed real-time quote and OHLCV feeds (e.g. Polygon, Twelve Data, exchange APIs).
@@ -69,4 +64,4 @@ curl -X POST http://localhost:8000/api/analyze \
 - AI explanation is generated from structured numbers; it does **not** currently search for recent news. Add a news provider or WebSearchTool if needed, with explicit citations and timestamps.
 - Add authentication, persistence, API rate limiting, Redis cache, integration tests, streaming, market calendars, data vendor agreements, and portfolio/risk preferences before production deployment.
 - For crypto, daily candles cover calendar days; for stocks, they cover trading sessions.
-- The server fetches market data synchronously in a thread; for heavy traffic replace it with a dedicated async market-data service and shared caching.
+- Market data is fetched asynchronously with a 90-second in-memory cache and concurrent request deduplication. For multiple server instances, add shared caching.
